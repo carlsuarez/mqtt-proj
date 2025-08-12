@@ -6,7 +6,7 @@
 class ConnectionManager {
 
   /* Smart pointer to client object */
-  std::unique_ptr<mqtt::client> client;
+   mqtt::client_ptr client;
 
   /* Class to handler callbacks */
   class user_callback : public virtual mqtt::callback {
