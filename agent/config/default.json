@@ -1,0 +1,23 @@
+{
+    "broker_url": "mqtt://10.0.0.14:1883",
+    "client_id": "agent_0",
+    "username": "USERNAME",
+    "password": "PASSWORD",
+    "thread_pool_size": 4,
+    "subscriptions": [
+        {
+            "topic": "device/agent_1/telemetry",
+            "qos_level": 1
+        },
+        {
+            "topic": "device/agent_1/commands",
+            "qos_level": 1
+        }
+    ],
+    "enable_persistence": false,
+    "persistence_directory": "./persistence",
+    "use_ssl": false,
+    "log_level": "INFO",
+    "automatic_reconnect": true,
+    "reconnect_delay": 5
+}
