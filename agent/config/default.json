@@ -1,16 +1,12 @@
 {
-    "broker_url": "mqtt://10.0.0.14:1883",
+    "broker_url": "mqtt://localhost:1883",
     "client_id": "agent_0",
     "username": "USERNAME",
     "password": "PASSWORD",
     "thread_pool_size": 4,
     "subscriptions": [
         {
-            "topic": "device/agent_1/telemetry",
-            "qos_level": 1
-        },
-        {
-            "topic": "device/agent_1/commands",
+            "topic": "tests/alive",
             "qos_level": 1
         }
     ],

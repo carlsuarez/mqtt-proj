@@ -5,8 +5,8 @@ find_package(Catch2 REQUIRED)
 
 # Add test executable
 add_executable(tests
-    main.cpp
-    test_agent.cpp
+   test_publish.cpp
+   test_subscribe.cpp
 )
 
 # Link required libraries 

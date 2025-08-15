@@ -5,7 +5,23 @@
 
 std::atomic<bool> MQTTAgent::shutdown_requested{false};
 
-MQTTAgent::MQTTAgent(const Config &config) : config_(config) {
+MQTTAgent *MQTTAgent::instance{nullptr};
+
+MQTTAgent &MQTTAgent::get_instance(const Config &config,
+                                   MQTTCallback &callback) {
+  if (instance == nullptr)
+    instance = new MQTTAgent(config, callback);
+
+  return *instance;
+}
+
+void MQTTAgent::release_instance() {
+  delete instance;
+  instance = nullptr;
+}
+
+MQTTAgent::MQTTAgent(const Config &config, MQTTCallback &callback)
+    : config_(config), callback_(callback) {
   // Create MQTT client
   if (config_.enable_persistence)
     client_ = std::make_unique<mqtt::async_client>(
@@ -14,9 +30,8 @@ MQTTAgent::MQTTAgent(const Config &config) : config_(config) {
     client_ = std::make_unique<mqtt::async_client>(
         config_.broker_url, config_.client_id, mqtt::NO_PERSISTENCE);
 
-  // Create callback
-  callback_ = std::make_unique<MQTTCallback>(config_.client_id);
-  client_->set_callback(*callback_);
+  // Set the callback
+  client_->set_callback(callback_);
 
   // Setup connection options
   setup_connection_options();
@@ -25,7 +40,7 @@ MQTTAgent::MQTTAgent(const Config &config) : config_(config) {
 bool MQTTAgent::connect() {
   try {
     std::cout << "Connecting to MQTT broker..." << std::endl;
-    auto token = client_->connect(connect_options_, nullptr, *callback_);
+    auto token = client_->connect(connect_options_, nullptr, callback_);
     token->wait(); // This will be changed to a non-blocking operation
 
     if (!client_->is_connected()) {
@@ -33,16 +48,18 @@ bool MQTTAgent::connect() {
       return false;
     }
 
-    // Subscribe to topics
-    for (const auto &topic : config_.subscriptions) {
-      auto qos =
-          config_.subscription_qos.find(topic) != config_.subscription_qos.end()
-              ? static_cast<int>(config_.subscription_qos.at(topic))
-              : static_cast<int>(config_.qos_level);
+    // Subscribe to topics iff there is no session already present
+    if (!token->get_connect_response().is_session_present()) {
+      for (const auto &topic : config_.subscriptions) {
+        auto qos = config_.subscription_qos.find(topic) !=
+                           config_.subscription_qos.end()
+                       ? static_cast<int>(config_.subscription_qos.at(topic))
+                       : static_cast<int>(config_.qos_level);
 
-      std::cout << "Subscribing to: " << topic << " (QoS " << qos << ")"
-                << std::endl;
-      client_->subscribe(topic, qos, nullptr, *callback_);
+        std::cout << "Subscribing to: " << topic << " (QoS " << qos << ")"
+                  << std::endl;
+        client_->subscribe(topic, qos, nullptr, callback_);
+      }
     }
 
     return true;
@@ -62,7 +79,7 @@ void MQTTAgent::publish_message(const std::string &topic,
     msg->set_retained(retained);
 
     std::cout << "Publishing to " << topic << ": " << payload << std::endl;
-    client_->publish(msg, nullptr, *callback_);
+    client_->publish(msg, nullptr, callback_);
 
   } catch (const mqtt::exception &exc) {
     std::cerr << "Publish failed: " << exc.what() << std::endl;

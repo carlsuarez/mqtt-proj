@@ -10,9 +10,7 @@
 #include <mqtt/async_client.h>
 
 #include "Config.hpp"
-#include "Interfaces.hpp"
 #include "MQTTAgent.hpp"
-#include "MQTTMessage.hpp"
 
 const std::string DEFAULT_CONFIG_PATH{"config/default.json"};
 /**
@@ -27,15 +25,24 @@ int main(int argc, char *argv[]) {
   if (argc >= 3 && std::strcmp(argv[2], "--config") == 0)
     config_path = argv[3];
 
+  // Build the Config object from the specified json file
   Config config = ConfigBuilder::load_from_json(config_path);
 
   try {
-    MQTTAgent agent(config);
+    // Instantiate callback class
+    MQTTCallback cb(config.client_id);
+
+    // Create instance
+    MQTTAgent &agent = MQTTAgent::get_instance(config, cb);
+
+    // Connect and run agent
     agent.connect();
     agent.run();
   } catch (const std::exception &e) {
     std::cerr << e.what() << std::endl;
   }
+
+  MQTTAgent::release_instance();
 
   return 0;
 }

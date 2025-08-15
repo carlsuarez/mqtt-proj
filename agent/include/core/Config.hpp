@@ -1,6 +1,5 @@
 #pragma once
 
-#include "MQTTMessage.hpp"
 #include <chrono>
 #include <fstream>
 #include <nlohmann/json.hpp>
@@ -9,6 +8,16 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+
+/**
+ * Enumeration for MQTT Quality of Service levels
+ */
+enum class QoSLevel : int {
+    AT_MOST_ONCE = 0,   // Fire and forget
+    AT_LEAST_ONCE = 1,  // Acknowledged delivery
+    EXACTLY_ONCE = 2    // Guaranteed delivery
+};
+
 
 /**
  * Configuration structure for the MQTT platform
