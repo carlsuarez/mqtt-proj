@@ -1,10 +1,11 @@
 #pragma once
 
+#include <algorithm>
 #include <chrono>
 #include <fstream>
+#include <iostream>
 #include <nlohmann/json.hpp>
 #include <stdexcept>
-#include <iostream>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -13,11 +14,29 @@
  * Enumeration for MQTT Quality of Service levels
  */
 enum class QoSLevel : int {
-    AT_MOST_ONCE = 0,   // Fire and forget
-    AT_LEAST_ONCE = 1,  // Acknowledged delivery
-    EXACTLY_ONCE = 2    // Guaranteed delivery
+  AT_MOST_ONCE = 0,  // Fire and forget
+  AT_LEAST_ONCE = 1, // Acknowledged delivery
+  EXACTLY_ONCE = 2   // Guaranteed delivery
 };
 
+/*
+ * Enumeration for log levels
+ */
+enum class LogLevel { NONE, ERROR, WARNING, INFO, DEBUG };
+
+/*
+ * Helper function to convert a string to a LogLevel
+ * @param log_level String representing the log level. Valid strings are
+ * "DEBUG", "INFO", "WARNING" and "ERROR"
+ * @return Corresponding LogLevel
+ */
+LogLevel string_to_log_level(const std::string &log_level);
+
+/*
+ * Helper function to convert a LogLevel to a string
+ * @param level The log level to convert to a string
+ */
+std::string log_level_to_string(LogLevel level);
 
 /**
  * Configuration structure for the MQTT platform
@@ -66,11 +85,10 @@ struct Config {
   std::string client_private_key_file;
 
   // Logging settings
-  enum class LogLevel { DEBUG, INFO, WARNING, ERROR };
 
-  LogLevel log_level = LogLevel::INFO;
-  std::string log_file_path;
-  bool log_to_console = true;
+  LogLevel log_level = LogLevel::NONE;
+  std::string log_file_path = "";
+  bool log_to_console = false;
 
   // Performance settings
   size_t max_inflight_messages = 20;
@@ -83,37 +101,44 @@ struct Config {
   // Validation method
   bool validate() const {
     if (broker_url.empty()) {
-    std::
-      cout << "No broker_url" << std::endl;
+      std::cout << "No broker_url" << std::endl;
       return false;
     }
     if (client_id.empty()) {
-    std::
-      cout << "No client_id" << std::endl;
+      std::cout << "No client_id" << std::endl;
       return false;
     }
     if (thread_pool_size == 0) {
-    std::
-      cout << "No thread_pool_size " << std::endl;
+      std::cout << "No thread_pool_size " << std::endl;
       return false;
     }
     if (message_queue_size == 0) {
-    std::
-      cout << "No message_queue_size " << std::endl;
+      std::cout << "No message_queue_size " << std::endl;
       return false;
     }
     if (enable_persistence && persistence_directory.empty()) {
-    std::
-      cout << "No enable_persistence " << std::endl;
+      std::cout << "No enable_persistence " << std::endl;
       return false;
     }
     if (use_ssl && ca_certificate_file.empty()) {
-    std::
-      cout << "No use_ssl " << std::endl;
+      std::cout << "No use_ssl " << std::endl;
       return false;
     }
     return true;
   }
+};
+
+/*
+ * Struct to define options for Logging
+ */
+struct log_options {
+  log_options() = default;
+  explicit log_options(Config &config)
+      : log_file_path(config.log_file_path), log_level(config.log_level),
+        log_to_console(config.log_to_console) {}
+  std::string log_file_path;
+  LogLevel log_level;
+  bool log_to_console;
 };
 
 /**
@@ -140,7 +165,8 @@ public:
                                const std::string &message, QoSLevel qos,
                                bool retained);
 
-  ConfigBuilder &set_log_level(Config::LogLevel level);
+  ConfigBuilder &set_log(LogLevel level, const std::string &log_file_patj,
+                         bool log_to_console);
 
   ConfigBuilder &enable_auto_reconnect(std::chrono::seconds delay);
 
@@ -154,13 +180,4 @@ public:
    * @desc Finalize the build of the Config object.
    */
   Config build() const;
-
-private:
-  /*
-   * Helper function to convert a string to a Config::LogLevel
-   * @param log_level String representing the log level. Valid strings are
-   * "DEBUG", "INFO", "WARNING" and "ERROR"
-   * @return Corresponding Config::LogLevel
-   */
-  static Config::LogLevel string_to_log_level(const std::string &log_level);
 };

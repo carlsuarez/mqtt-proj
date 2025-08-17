@@ -6,12 +6,14 @@
 
 const std::chrono::seconds TIMEOUT{10};
 
+static log_options logOpts;
+
 // Callback for testing message reception
 class TestCallback : public MQTTCallback {
 public:
   std::atomic<bool> &flag;
   
-  TestCallback(std::atomic<bool> &f) : MQTTCallback("test-callback"), flag(f) {}
+  TestCallback(std::atomic<bool> &f) : MQTTCallback("test-callback", logOpts), flag(f) {}
   
   void message_arrived(mqtt::const_message_ptr msg) override {
     std::cout << "Received message: " << msg->get_payload_str() << std::endl;
@@ -24,7 +26,7 @@ public:
 // Dummy callback for agent when we don't need message handling
 class DummyCallback : public MQTTCallback {
 public:
-  DummyCallback() : MQTTCallback("dummy-callback") {}
+  DummyCallback() : MQTTCallback("dummy-callback", logOpts) {}
 };
 
 // Simple callback for external MQTT clients (not inheriting from MQTTCallback)

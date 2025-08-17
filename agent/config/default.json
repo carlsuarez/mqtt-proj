@@ -11,9 +11,11 @@
         }
     ],
     "enable_persistence": false,
-    "persistence_directory": "./persistence",
+    "persistence_directory": "/home/CJ/mqtt-proj/agent/persistence",
     "use_ssl": false,
-    "log_level": "INFO",
+    "log_level": "DEBUG",
+    "log_file_path": "/home/CJ/mqtt-proj/agent/log/default.log",
+    "log_to_console": true,
     "automatic_reconnect": true,
     "reconnect_delay": 5
 }

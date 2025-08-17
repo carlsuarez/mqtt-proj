@@ -1,20 +1,19 @@
 #pragma once
 
-#include <string>
 #include <chrono>
-#include <vector>
+#include <atomic>
 
 /**
  * Structure for platform metrics
  */
 struct PlatformMetrics {
-    size_t messages_received = 0;
-    size_t messages_sent = 0;
-    size_t messages_processed = 0;
-    size_t connection_events = 0;
-    double average_processing_time_ms = 0.0;
-    bool is_connected = false;
-    std::chrono::system_clock::time_point start_time;
+    std::atomic<size_t> messages_received = 0;
+    std::atomic<size_t> messages_sent = 0;
+    std::atomic<size_t> messages_processed = 0;
+    std::atomic<size_t> connection_events = 0;
+    std::atomic<double> average_processing_time_ms = 0.0;
+    std::atomic<bool> is_connected = false;
+    std::atomic<std::chrono::system_clock::time_point> start_time;
     
     PlatformMetrics() {
         start_time = std::chrono::system_clock::now();
@@ -22,7 +21,7 @@ struct PlatformMetrics {
     
     int64_t get_uptime_seconds() const {
         auto now = std::chrono::system_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::seconds>(now - start_time);
+        auto duration = std::chrono::duration_cast<std::chrono::seconds>(now - start_time.load());
         return duration.count();
     }
     

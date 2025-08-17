@@ -90,7 +90,8 @@ void MQTTAgent::run() {
   std::cout << "Platform running... Press Ctrl+C to stop" << std::endl;
 
   // Publish a startup message
-  publish_message("platform/status", "Platform started",
+  std::string dev_topic = "device/" + config_.client_id;
+  publish_message(dev_topic + "/status", "Client started",
                   QoSLevel::AT_LEAST_ONCE, true);
 
   // Main loop - in later phases this will be replaced with proper threading
@@ -99,13 +100,13 @@ void MQTTAgent::run() {
     std::this_thread::sleep_for(std::chrono::seconds(10));
 
     // Send periodic heartbeat
-    publish_message("platform/heartbeat",
+    publish_message(dev_topic + "/heartbeat",
                     "Heartbeat " + std::to_string(++message_count));
   }
 
   // Publish shutdown message and shutdown
   if (client_->is_connected()) {
-    publish_message("platform/status", "Platform shutting down",
+    publish_message(dev_topic + "/status", "Client shutting down",
                     QoSLevel::AT_LEAST_ONCE, true);
     shutdown();
   }

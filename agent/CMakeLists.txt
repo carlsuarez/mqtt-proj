@@ -14,6 +14,7 @@ find_package(nlohmann_json REQUIRED)
 set(LIB_SOURCES
     src/core/MQTTAgent.cpp
     src/core/Config.cpp
+    src/core/MQTTCallback.cpp
 )
 
 add_library(mqtt_agent_lib ${LIB_SOURCES})

@@ -30,7 +30,7 @@ int main(int argc, char *argv[]) {
 
   try {
     // Instantiate callback class
-    MQTTCallback cb(config.client_id);
+    MQTTCallback cb(config.client_id, log_options(config));
 
     // Create instance
     MQTTAgent &agent = MQTTAgent::get_instance(config, cb);

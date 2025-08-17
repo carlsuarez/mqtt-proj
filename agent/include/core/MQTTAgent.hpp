@@ -2,69 +2,14 @@
 #define MQTTAGENT_HPP
 
 #include "Config.hpp"
-#include "MQTTMetrics.hpp"
+#include "MQTTCallback.hpp"
 #include <atomic>
 #include <cstdlib>
+#include <ctime>
 #include <mqtt/async_client.h>
+#include <mqtt/delivery_token.h>
+#include <mqtt/message.h>
 #include <mqtt/reason_code.h>
-
-/**
- * Simple callback class for MQTT events
- */
-class MQTTCallback : public virtual mqtt::callback,
-                     public virtual mqtt::iaction_listener {
-private:
-  std::string client_id_;
-
-public:
-  MQTTCallback(const std::string &client_id) : client_id_(client_id) {}
-
-  // Connection callbacks
-  virtual void connected(const std::string &cause) override {
-    std::cout << "[" << client_id_ << "] Connected: " << cause << std::endl;
-  }
-
-  virtual void connection_lost(const std::string &cause) override {
-    std::cout << "[" << client_id_ << "] Connection lost: " << cause
-              << std::endl;
-  }
-
-  // Message callback
-  virtual void message_arrived(mqtt::const_message_ptr msg) override {
-    std::cout << "[" << client_id_ << "] Message arrived:" << std::endl;
-    std::cout << "  Topic: " << msg->get_topic() << std::endl;
-    std::cout << "  Payload: " << msg->get_payload_str() << std::endl;
-    std::cout << "  QoS: " << msg->get_qos() << std::endl;
-    std::cout << "  Retained: " << (msg->is_retained() ? "true" : "false")
-              << std::endl;
-  }
-
-  // Action callbacks
-  virtual void on_failure(const mqtt::token &tok) override {
-    if (tok.get_reason_code() == mqtt::SUCCESS)
-      return on_success(tok); // Token completed asynchronously
-
-    std::cout << "[" << client_id_
-              << "] Action failed: " << tok.get_reason_code() << std::endl;
-  }
-
-  virtual void on_success(const mqtt::token &tok) override {
-    if (tok.get_type() == mqtt::token::CONNECT) {
-      std::cout << "[" << client_id_ << "] Connection successful" << std::endl;
-    } else if (tok.get_type() == mqtt::token::SUBSCRIBE) {
-      std::cout << "[" << client_id_ << "] Subscription successful"
-                << std::endl;
-    } else if (tok.get_type() == mqtt::token::PUBLISH) {
-      std::cout << "[" << client_id_ << "] Publish successful" << std::endl;
-    }
-  }
-
-  virtual void delivery_complete(mqtt::delivery_token_ptr tok) override {
-    std::cout << "[" << client_id_
-              << "] Delivery complete for message ID: " << tok->get_message_id()
-              << std::endl;
-  }
-};
 
 /*
  * Basic MQTT Connection and Messaging
@@ -75,8 +20,6 @@ private:
 
   // Object that describes the configuration of this client
   Config config_;
-
-  PlatformMetrics metrics;
 
   // Smart pointer to mqtt::async_client object
   std::unique_ptr<mqtt::async_client> client_;
@@ -108,10 +51,12 @@ public:
   /*
    * Get singleton instance of MQTTAgent.
    * @param config Config object that describes the configuration for the agent
+   * @param callback MQTTCallback object that determines the callback methods
    */
   static MQTTAgent &get_instance(const Config &config, MQTTCallback &callback);
 
-  static void release_instance(void);
+  static void release_instance();
+
   /*
    * Establishes connection and subscribes to topics that were specified in
    * config

@@ -60,8 +60,12 @@ ConfigBuilder &ConfigBuilder::set_last_will(
   return *this;
 }
 
-ConfigBuilder &ConfigBuilder::set_log_level(Config::LogLevel level) {
+ConfigBuilder &ConfigBuilder::set_log(LogLevel level,
+                                      const std::string &log_file_path,
+                                      bool log_to_console) {
   config_.log_level = level;
+  config_.log_file_path = log_file_path;
+  config_.log_to_console = log_to_console;
   return *this;
 }
 
@@ -113,7 +117,9 @@ Config ConfigBuilder::load_from_json(const std::string &path) {
         j.value("ca_certificate_file", "./authenication/ca_certificate"));
 
   if (j.contains("log_level"))
-    builder.set_log_level(string_to_log_level(j["log_level"]));
+    builder.set_log(string_to_log_level(j["log_level"]),
+                    j.value("log_file_path", ""),
+                    j.value("log_to_console", false));
 
   if (j.value("enable_auto_reconnect", false))
     builder.enable_auto_reconnect(
@@ -129,20 +135,25 @@ Config ConfigBuilder::build() const {
   return config_;
 }
 
-Config::LogLevel
-ConfigBuilder::string_to_log_level(const std::string &log_level) {
-  static const std::unordered_map<std::string, Config::LogLevel> map = {
-      {"DEBUG", Config::LogLevel::DEBUG},
-      {"INFO", Config::LogLevel::INFO},
-      {"WARNING", Config::LogLevel::WARNING},
-      {"ERROR", Config::LogLevel::ERROR}};
+LogLevel string_to_log_level(const std::string &log_level) {
+  static const std::unordered_map<std::string, LogLevel> map = {
+      {"DEBUG", LogLevel::DEBUG},
+      {"INFO", LogLevel::INFO},
+      {"WARNING", LogLevel::WARNING},
+      {"ERROR", LogLevel::ERROR}};
 
   std::string upper = log_level;
   std::transform(upper.begin(), upper.end(), upper.begin(), ::toupper);
 
-  auto it = map.find(upper);
-  if (it != map.end()) {
-    return it->second;
-  }
-  throw std::invalid_argument("Invalid log level: " + log_level);
+  return map.at(upper);
+}
+
+std::string log_level_to_string(LogLevel level) {
+  static const std::unordered_map<LogLevel, std::string> map = {
+      {LogLevel::DEBUG, "DEBUG"},
+      {LogLevel::INFO, "INFO"},
+      {LogLevel::WARNING, "WARNING"},
+      {LogLevel::ERROR, "ERROR"}};
+
+  return map.at(level);
 }
